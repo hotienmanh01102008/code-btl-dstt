@@ -138,14 +138,15 @@ for k = 1:(n - 2)
         continue;
     end
     
-    s = sign(x(1));
-    if s == 0
-        s = 1;
+    if x(1) ~= 0
+        phase = x(1) / abs(x(1));
+    else
+        phase = 1; 
     end
-    alpha = -s * norm_x;
+    alpha = phase * norm_x;
     
     u = x;
-    u(1) = u(1) - alpha;
+    u(1) = u(1) + alpha;
     v = u / norm(u);
     
     % Tạo ma trận Householder P_k
@@ -153,8 +154,8 @@ for k = 1:(n - 2)
     P_k = eye(n);
     P_k(k+1:n, k+1:n) = P_prime;
     
-    % Biến đổi tương tự: H = P_k * H * P_k
-    H = P_k * H * P_k;
+    % Biến đổi tương tự: H = P_k * H * P_k'
+    H = P_k * H * P_k';
 end
 fprintf('----------------------\n');
 fprintf('\nMa trận Hessenberg của A là:\n');
