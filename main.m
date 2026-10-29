@@ -166,6 +166,107 @@ disp(H);
 %% BƯỚC 3 (Lạc): Phân rã QR của Hk bằng phép quay Givens
 
 
+
+                                Pseudo code
+
+// BƯỚC 1: Khởi tạo ma trận R và Q
+GÁN R = H  // Tạo bản sao từ ma trận Hessenberg H
+GÁN Q = ma_trận_đơn_vị(n)  // Khởi tạo Q là ma trận đơn vị cấp n
+
+
+// BƯỚC 2: Thực hiện vòng lặp quay Givens (tương thích số thực & số phức)
+VỚI i TỪ 1 ĐẾN n - 1 LÀM:
+    a = R[i, i]      // Phần tử trên đường chéo chính
+    b = R[i+1, i]    // Phần tử ngay dưới đường chéo chính
+    
+    NẾU mô_đun(b) == 0 THÌ
+        BỎ QUA VÀ TIẾP TỤC VÒNG LẶP  // Đã bằng 0, chuyển sang bước i tiếp theo
+    KẾT THÚC NẾU
+    
+    // Tính độ dài bằng mô-đun tuyệt đối (chuẩn hóa cho cả số phức)
+    r = căn_bậc_hai(mô_đun(a)^2 + mô_đun(b)^2)
+    c = a / r  // Hệ số c
+    s = b / r  // Hệ số s
+    
+    // Tạo ma trận quay Givens Unitary G_i cấp n x n
+    G_i = ma_trận_đơn_vị(n)
+    G_i[i, i]     =  liên_hợp_phức(c)
+    G_i[i, i+1]   =  liên_hợp_phức(s)
+    G_i[i+1, i]   = -s
+    G_i[i+1, i+1] =  c
+    
+    // Cập nhật ma trận R và Q
+    R = G_i * R                              // Triệt tiêu phần tử R[i+1, i] về 0
+    Q = Q * chuyển_vị_liên_hợp(G_i)         // Nhân dồn ma trận Hermit (G_i^H) vào Q
+KẾT THÚC FOR
+
+
+// BƯỚC 3: Triệt tiêu sai số làm tròn
+R = lấy_tam_giác_trên(R)  // Xóa sai số số học bên dưới đường chéo chính
+
+
+// BƯỚC 4: In kết quả phân rã QR
+IN "----------------------"
+IN "Ma trận Unitary/Trực giao Q:"
+IN ma_trận Q
+IN "Ma trận tam giác trên R:"
+IN ma_trận R
+
+                                        Code
+
+% Phân rã QR của ma trận Hessenberg H bằng phép quay Givens
+
+R = H;          % Khởi tạo R ban đầu bằng H
+Q = eye(n);     % Khởi tạo Q là ma trận đơn vị cấp n
+
+for i = 1:(n - 1)
+    % Lấy 2 phần tử trên đường chéo chính và ngay dưới đường chéo chính
+    a = R(i, i);
+    b = R(i+1, i);
+    
+    % Nếu phần tử dưới đường chéo chính đã bằng 0 thì không cần khử
+    if abs(b) == 0
+        continue;
+    end
+    
+    % Tính ma trận quay Givens (cos = c, sin = s)
+    r_val = sqrt(abs(a)^2 + abs(b)^2);
+    c = a / r_val;
+    s = b / r_va;
+    
+    % Tạo ma trận quay Givens G_i cấp n x n
+    G_i = eye(n);
+    G_i(i, i)     =conj(c);
+    G_i(i, i+1)   = conj(s);
+    G_i(i+1, i)   = -s;
+    G_i(i+1, i+1) = c;
+    
+    % Cập nhật R = G_i * R (triệt tiêu phần tử R(i+1, i) về 0)
+    R = G_i * R;
+    
+    % Cập nhật Q = Q * G_i' (vì Q = G1' * G2' * ... * G_{n-1}')
+    Q = Q * G_i';
+end
+
+% Triệt tiêu các sai số làm tròn nhỏ (gần bằng 0) bên dưới đường chéo chính của R
+R = triu(R);
+
+% -------------------------------------------------------------------------
+% Hiển thị kết quả
+% -------------------------------------------------------------------------
+fprintf('----------------------\n');
+fprintf('\nMa trận trực giao Q =\n');
+disp(Q);
+
+fprintf('Ma trận tam giác trên R =\n');
+disp(R);
+
+% Kiểm tra tính đúng đắn: Tích Q * R phải bằng H
+fprintf('Kiểm tra tích Q * R (so sánh với H) =\n');
+disp(Q * R);
+
+
+
 %% BƯỚC 4 (Mạnh): Thuật toán QR lặp
 
 
