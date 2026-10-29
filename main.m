@@ -102,13 +102,12 @@ VỚI k TỪ 1 ĐẾN n - 2 LÀM:
     NẾU norm_x == 0 THÌ
         BỎ QUA VÀ TIẾP TỤC VÒNG LẶP  // Chuyển sang bước k tiếp theo
     KẾT THÚC NẾU
-    s = sign(x[1])
-    NẾU s == 0 THÌ
-        s = 1
+    NẾU x(1) khác 0 THÌ
+        phase = x(1)/(module x(1))
     KẾT THÚC NẾU
-    alpha = -s * norm_x
+    alpha = phase * norm_x
     u = x
-    u[1] = u[1] - alpha
+    u[1] = u[1] + alpha
     v = u / chuẩn_Euclid(u)  // Chuẩn hóa u thành vectơ đơn vị v
 
     // Tạo ma trận Householder P_k
@@ -116,8 +115,8 @@ VỚI k TỪ 1 ĐẾN n - 2 LÀM:
     P_k = ma_trận_đơn_vị(n)
     P_k[k+1:n, k+1:n] = P_prime  // Gán P_prime vào góc dưới bên phải
 
-    // Biến đổi tương tự: H = P_k * H * P_k
-    H = P_k * H * P_k
+    // Biến đổi tương tự: H = P_k * H * P_k'
+    H = P_k * H * P_k'
 KẾT THÚC FOR
 
 // BƯỚC 3: In ma trận kết quả
