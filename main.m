@@ -214,61 +214,114 @@ IN ma_trận R
 
                                         Code
 
-% Phân rã QR của ma trận Hessenberg H bằng phép quay Givens
+% Phân rã QR của ma trận Hessenberg M bằng phép quay Givens
+function [Q, R] = qr_givens(M)
+    n = size(M, 1);
+    R = M;          % Khởi tạo R ban đầu bằng M
+    Q = eye(n);     % Khởi tạo Q là ma trận đơn vị cấp n
 
-R = H;          % Khởi tạo R ban đầu bằng H
-Q = eye(n);     % Khởi tạo Q là ma trận đơn vị cấp n
-
-for i = 1:(n - 1)
-    % Lấy 2 phần tử trên đường chéo chính và ngay dưới đường chéo chính
-    a = R(i, i);
-    b = R(i+1, i);
-    
-    % Nếu phần tử dưới đường chéo chính đã bằng 0 thì không cần khử
-    if abs(b) == 0
-        continue;
+    for i = 1:(n - 1)
+        % Lấy 2 phần tử trên đường chéo chính và ngay dưới đường chéo chính
+        a = R(i, i);
+        b = R(i+1, i);
+        
+        % Nếu phần tử dưới đường chéo chính đã xấp xỉ bằng 0 thì không cần khử
+        if abs(b) < 1e-12
+            continue;
+        end
+        
+        % Tính ma trận quay Givens (cos = c, sin = s)
+        r_val = sqrt(abs(a)^2 + abs(b)^2);
+        c = a / r_val;
+        s = b / r_val; % Đã sửa: r_va -> r_val
+        
+        % Tạo ma trận quay Givens G_i cấp n x n
+        G_i = eye(n);
+        G_i(i, i)     = conj(c);
+        G_i(i, i+1)   = conj(s);
+        G_i(i+1, i)   = -s;
+        G_i(i+1, i+1) = c;
+        
+        % Cập nhật R = G_i * R (triệt tiêu phần tử R(i+1, i) về 0)
+        R = G_i * R;
+        
+        % Cập nhật Q = Q * G_i' (vì Q = G1' * G2' * ... * G_{n-1}')
+        Q = Q * G_i';
     end
-    
-    % Tính ma trận quay Givens (cos = c, sin = s)
-    r_val = sqrt(abs(a)^2 + abs(b)^2);
-    c = a / r_val;
-    s = b / r_va;
-    
-    % Tạo ma trận quay Givens G_i cấp n x n
-    G_i = eye(n);
-    G_i(i, i)     =conj(c);
-    G_i(i, i+1)   = conj(s);
-    G_i(i+1, i)   = -s;
-    G_i(i+1, i+1) = c;
-    
-    % Cập nhật R = G_i * R (triệt tiêu phần tử R(i+1, i) về 0)
-    R = G_i * R;
-    
-    % Cập nhật Q = Q * G_i' (vì Q = G1' * G2' * ... * G_{n-1}')
-    Q = Q * G_i';
+
+    % Triệt tiêu các sai số làm tròn nhỏ bên dưới đường chéo chính của R
+    R = triu(R);
 end
-
-% Triệt tiêu các sai số làm tròn nhỏ (gần bằng 0) bên dưới đường chéo chính của R
-R = triu(R);
-
-% -------------------------------------------------------------------------
-% Hiển thị kết quả
-% -------------------------------------------------------------------------
-fprintf('----------------------\n');
-fprintf('\nMa trận trực giao Q =\n');
-disp(Q);
-
-fprintf('Ma trận tam giác trên R =\n');
-disp(R);
-
-% Kiểm tra tính đúng đắn: Tích Q * R phải bằng H
-fprintf('Kiểm tra tích Q * R (so sánh với H) =\n');
-disp(Q * R);
 
 
 
 %% BƯỚC 4 (Mạnh): Thuật toán QR lặp
 
+
+
+                                        Pseudo code
+GÁN min = 1e-6          // Dung sai hội tụ
+GÁN limit = 1000      // Số vòng lặp tối đa
+GÁN A_k = H             // Khởi tạo A_0 = H (từ Bước 2)
+GÁN converged = SAI     // Biến cờ đánh dấu trạng thái hội tụ
+
+
+VỚI iter TỪ 1 ĐẾN limit LÀM:
+    // 1. Phân rã QR ma trận A_k bằng phép quay Givens
+    [Q_k, R_k] = qr_givens(A_k)
+
+    // 2. Cập nhật ma trận mới A_{k+1} = R_k * Q_k
+    A_k = R_k * Q_k
+
+    // 3. Trích xuất đường chéo phụ ngay dưới đường chéo chính
+    subdiag = lấy_đường_chéo_phụ_dưới(A_k)
+
+    // 4. Kiểm tra điều kiện hội tụ (tất cả phần tử đường chéo phụ < tol)
+    NẾU giá_trị_lớn_nhất(trị_tuyệt_đối(subdiag)) < min THÌ
+        converged = ĐÚNG
+        IN "-> Thuật toán hội tụ thành công sau " + limit + " vòng lặp!"
+        THOÁT VÒNG LẶP
+    KẾT THÚC NẾU
+KẾT THÚC FOR
+
+NẾU KHÔNG converged THÌ
+    IN "-> Cảnh báo: Chưa hội tụ hoàn toàn sau " + max_iter + " vòng lặp."
+KẾT THÚC NẾU
+
+
+
+                                            Code
+% 1. Thiết lập tham số lặp
+min = 1e-6;          % Dung sai hội tụ (ngưỡng triệt tiêu phần tử đường chéo phụ)
+limit = 1000;      % Giới hạn số vòng lặp tối đa
+A_k = H;             % Gán A_0 là ma trận Hessenberg H thu được từ Bước 2
+converged = false;   % Biến cờ đánh dấu trạng thái hội tụ
+
+fprintf('----------------------\n');
+fprintf('BẮT ĐẦU VÒNG LẶP QR...\n\n');
+
+% 2. Vòng lặp QR chính 
+for i = 1:limit
+    % Gọi hàm qr_givens truyền A_k vào để phân rã QR
+    [Q_k, R_k] = qr_givens(A_k);
+    
+    % Cập nhật ma trận A_{k+1} = R_k * Q_k
+    A_k = R_k * Q_k;
+    
+    % Trích xuất các phần tử nằm ngay dưới đường chéo chính
+    subdiag = diag(A_k, -1);
+    
+    % Kiểm tra điều kiện dừng
+    if max(abs(subdiag)) < min
+        converged = true;
+        fprintf('-> Thuật toán hội tụ thành công sau %d vòng lặp!\n\n', i);
+        break;
+    end
+end
+
+if ~converged
+    fprintf('-> Cảnh báo: Chưa hội tụ hoàn toàn sau %d vòng lặp tối đa.\n\n', limit);
+end
 
 %% BƯỚC 5 (Lạc): Dạng Schur
 
