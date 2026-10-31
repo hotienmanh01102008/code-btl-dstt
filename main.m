@@ -297,9 +297,6 @@ limit = 1000;      % Giới hạn số vòng lặp tối đa
 A_k = H;             % Gán A_0 là ma trận Hessenberg H thu được từ Bước 2
 converged = false;   % Biến cờ đánh dấu trạng thái hội tụ
 
-fprintf('----------------------\n');
-fprintf('BẮT ĐẦU VÒNG LẶP QR...\n\n');
-
 % 2. Vòng lặp QR chính 
 for i = 1:limit
     % Gọi hàm qr_givens truyền A_k vào để phân rã QR
