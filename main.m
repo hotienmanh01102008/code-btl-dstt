@@ -7,7 +7,6 @@ clc; clear; close all;
 
 
                                    Pseudo code
-                                   
 // BƯỚC 1: Nhập và kiểm tra cấp ma trận (n)
 LẶP VÔ HẠN:
     THỬ:
@@ -168,9 +167,10 @@ disp(H);
 
 
                                 Pseudo code
-
+function [Q, R] = qr_givens(M)
 // BƯỚC 1: Khởi tạo ma trận R và Q
-GÁN R = H  // Tạo bản sao từ ma trận Hessenberg H
+n=size(M,1);
+GÁN R = M  // Tạo bản sao từ ma trận Hessenberg M
 GÁN Q = ma_trận_đơn_vị(n)  // Khởi tạo Q là ma trận đơn vị cấp n
 
 
