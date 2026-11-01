@@ -162,163 +162,129 @@ disp(H);
 
 
 
-%% BƯỚC 3 (Lạc): Phân rã QR của Hk bằng phép quay Givens
+%% BƯỚC 3 + 4 (Lạc + Mạnh): Phân rã QR của Hk bằng phép quay Givens + Thuật toán QR lặp
 
 
 
-                                Pseudo code
-function [Q, R] = qr_givens(M)
-// BƯỚC 1: Khởi tạo ma trận R và Q
-n=size(M,1);
-GÁN R = M  // Tạo bản sao từ ma trận Hessenberg M
-GÁN Q = ma_trận_đơn_vị(n)  // Khởi tạo Q là ma trận đơn vị cấp n
+                                    Pseudo code
+BẮT ĐẦU
+    % 1. Khởi tạo các tham số
+    Gán min = 1e-6
+    Gán limit = 1000
+    Gán H_k = H
+    Gán status = FALSE
 
+    % 2. Vòng lặp thuật toán QR
+    VÒNG LẶP i TỪ 1 ĐẾN limit DO:
+        R_k = H_k
+        Q_k = I_n  (Ma trận đơn vị cấp n)
 
-// BƯỚC 2: Thực hiện vòng lặp quay Givens (tương thích số thực & số phức)
-VỚI i TỪ 1 ĐẾN n - 1 LÀM:
-    a = R[i, i]      // Phần tử trên đường chéo chính
-    b = R[i+1, i]    // Phần tử ngay dưới đường chéo chính
-    
-    NẾU mô_đun(b) == 0 THÌ
-        BỎ QUA VÀ TIẾP TỤC VÒNG LẶP  // Đã bằng 0, chuyển sang bước i tiếp theo
-    KẾT THÚC NẾU
-    
-    // Tính độ dài bằng mô-đun tuyệt đối (chuẩn hóa cho cả số phức)
-    r = căn_bậc_hai(mô_đun(a)^2 + mô_đun(b)^2)
-    c = a / r  // Hệ số c
-    s = b / r  // Hệ số s
-    
-    // Tạo ma trận quay Givens Unitary G_i cấp n x n
-    G_i = ma_trận_đơn_vị(n)
-    G_i[i, i]     =  liên_hợp_phức(c)
-    G_i[i, i+1]   =  liên_hợp_phức(s)
-    G_i[i+1, i]   = -s
-    G_i[i+1, i+1] =  c
-    
-    // Cập nhật ma trận R và Q
-    R = G_i * R                              // Triệt tiêu phần tử R[i+1, i] về 0
-    Q = Q * chuyển_vị_liên_hợp(G_i)         // Nhân dồn ma trận Hermit (G_i^H) vào Q
-KẾT THÚC FOR
+        % --- Khử Givens để phân tích H_k = Q_k * R_k ---
+        VÒNG LẶP j TỪ 1 ĐẾN (n - 1) DO:
+            a = R_k[j, j]
+            b = R_k[j+1, j]
 
+            NẾU |b| < 1e-12 THÌ:
+                Bỏ qua bước này, chuyển sang j tiếp theo
+            KẾT THÚC NẾU
 
-// BƯỚC 3: Triệt tiêu sai số làm tròn
-R = lấy_tam_giác_trên(R)  // Xóa sai số số học bên dưới đường chéo chính
+            r_val = sqrt(|a|^2 + |b|^2)
+            c = a / r_val
+            s = b / r_val
 
+            Khởi tạo G_j = I_n
+            G_j[j, j]     = conj(c)
+            G_j[j, j+1]   = conj(s)
+            G_j[j+1, j]   = -s
+            G_j[j+1, j+1] = c
 
-// BƯỚC 4: In kết quả phân rã QR
-IN "----------------------"
-IN "Ma trận Unitary/Trực giao Q:"
-IN ma_trận Q
-IN "Ma trận tam giác trên R:"
-IN ma_trận R
+            Cập nhật R_k = G_j * R_k
+            Cập nhật Q_k = Q_k * G_j'
+        KẾT THÚC VÒNG LẶP j
 
-                                        Code
+        R_k = Triu(R_k)  (Chỉ giữ lại phần tam giác trên)
 
-% Phân rã QR của ma trận Hessenberg M bằng phép quay Givens
-function [Q, R] = qr_givens(M)
-    n = size(M, 1);
-    R = M;          % Khởi tạo R ban đầu bằng M
-    Q = eye(n);     % Khởi tạo Q là ma trận đơn vị cấp n
+        % --- Cập nhật ma trận cho bước lặp tiếp theo ---
+        H_k = R_k * Q_k
 
-    for i = 1:(n - 1)
-        % Lấy 2 phần tử trên đường chéo chính và ngay dưới đường chéo chính
-        a = R(i, i);
-        b = R(i+1, i);
+        % --- Kiểm tra điều kiện hội tụ ---
+        Lấy đường chéo phụ bên dưới: subdiag = diag(H_k, -1)
         
-        % Nếu phần tử dưới đường chéo chính đã xấp xỉ bằng 0 thì không cần khử
+        NẾU max(|subdiag|) < min THÌ:
+            status = TRUE
+            Thoát vòng lặp i (BREAK)
+        KẾT THÚC NẾU
+    KẾT THÚC VÒNG LẶP i
+
+    % 3. Xuất kết quả
+    NẾU status == TRUE THÌ:
+        In "Thuật toán QR hội tụ sau i bước lặp."
+    NGƯỢC LẠI:
+        In "Cảnh báo: Thuật toán không hội tụ sau limit bước lặp."
+    KẾT THÚC NẾU
+
+    In ma trận H_k
+
+
+                                  Code 
+
+% 4. Thuật toán QR lặp (Viết trực tiếp phép quay Givens bên trong)
+min = 1e-6;
+limit = 1000;
+H_k = H;
+status = false;
+
+for i = 1:limit
+    % --- Khử Givens để phân tích H_k thành Q_k * R_k ---
+    R_k = H_k;
+    Q_k = eye(n);
+    
+    for j = 1:(n - 1)
+        a = R_k(j, j);
+        b = R_k(j+1, j);
+        
         if abs(b) < 1e-12
             continue;
         end
         
-        % Tính ma trận quay Givens (cos = c, sin = s)
         r_val = sqrt(abs(a)^2 + abs(b)^2);
         c = a / r_val;
-        s = b / r_val; % Đã sửa: r_va -> r_val
+        s = b / r_val;
         
-        % Tạo ma trận quay Givens G_i cấp n x n
-        G_i = eye(n);
-        G_i(i, i)     = conj(c);
-        G_i(i, i+1)   = conj(s);
-        G_i(i+1, i)   = -s;
-        G_i(i+1, i+1) = c;
+        G_j = eye(n);
+        G_j(j, j)     = conj(c);
+        G_j(j, j+1)   = conj(s);
+        G_j(j+1, j)   = -s;
+        G_j(j+1, j+1) = c;
         
-        % Cập nhật R = G_i * R (triệt tiêu phần tử R(i+1, i) về 0)
-        R = G_i * R;
-        
-        % Cập nhật Q = Q * G_i' (vì Q = G1' * G2' * ... * G_{n-1}')
-        Q = Q * G_i';
+        R_k = G_j * R_k;
+        Q_k = Q_k * G_j';
     end
-
-    % Triệt tiêu các sai số làm tròn nhỏ bên dưới đường chéo chính của R
-    R = triu(R);
-end
-
-
-
-%% BƯỚC 4 (Mạnh): Thuật toán QR lặp
-
-
-
-                                        Pseudo code
-GÁN min = 1e-6          // Dung sai hội tụ
-GÁN limit = 1000      // Số vòng lặp tối đa
-GÁN A_k = H             // Khởi tạo A_0 = H (từ Bước 2)
-GÁN converged = SAI     // Biến cờ đánh dấu trạng thái hội tụ
-
-
-VỚI iter TỪ 1 ĐẾN limit LÀM:
-    // 1. Phân rã QR ma trận A_k bằng phép quay Givens
-    [Q_k, R_k] = qr_givens(A_k)
-
-    // 2. Cập nhật ma trận mới A_{k+1} = R_k * Q_k
-    A_k = R_k * Q_k
-
-    // 3. Trích xuất đường chéo phụ ngay dưới đường chéo chính
-    subdiag = lấy_đường_chéo_phụ_dưới(A_k)
-
-    // 4. Kiểm tra điều kiện hội tụ (tất cả phần tử đường chéo phụ < tol)
-    NẾU giá_trị_lớn_nhất(trị_tuyệt_đối(subdiag)) < min THÌ
-        converged = ĐÚNG
-        IN "-> Thuật toán hội tụ thành công sau " + limit + " vòng lặp!"
-        THOÁT VÒNG LẶP
-    KẾT THÚC NẾU
-KẾT THÚC FOR
-
-NẾU KHÔNG converged THÌ
-    IN "-> Cảnh báo: Chưa hội tụ hoàn toàn sau " + max_iter + " vòng lặp."
-KẾT THÚC NẾU
-
-
-
-                                            Code
-% 1. Thiết lập tham số lặp
-min = 1e-6;          % Dung sai hội tụ (ngưỡng triệt tiêu phần tử đường chéo phụ)
-limit = 1000;      % Giới hạn số vòng lặp tối đa
-A_k = H;             % Gán A_0 là ma trận Hessenberg H thu được từ Bước 2
-converged = false;   % Biến cờ đánh dấu trạng thái hội tụ
-
-% 2. Vòng lặp QR chính 
-for i = 1:limit
-    % Gọi hàm qr_givens truyền A_k vào để phân rã QR
-    [Q_k, R_k] = qr_givens(A_k);
+    R_k = triu(R_k);
     
-    % Cập nhật ma trận A_{k+1} = R_k * Q_k
-    A_k = R_k * Q_k;
-    
-    % Trích xuất các phần tử nằm ngay dưới đường chéo chính
-    subdiag = diag(A_k, -1);
+    % Cập nhật H_k = R_k * Q_k cho bước lặp tiếp theo
+    H_k = R_k * Q_k;
     
     % Kiểm tra điều kiện dừng
+    subdiag = diag(H_k, -1);
     if max(abs(subdiag)) < min
-        converged = true;
-        fprintf('-> Thuật toán hội tụ thành công sau %d vòng lặp!\n\n', i);
+        status = true;
         break;
     end
 end
 
-if ~converged
-    fprintf('-> Cảnh báo: Chưa hội tụ hoàn toàn sau %d vòng lặp tối đa.\n\n', limit);
+fprintf('----------------------\n');
+if status
+    fprintf('Thuật toán QR hội tụ sau %d bước lặp.\n', i);
+else
+    fprintf('Cảnh báo: Thuật toán không hội tụ sau %d bước lặp.\n', limit);
 end
+
+fprintf('\nMa trận H_k cuối cùng:\n');
+disp(H_k);
+
+
+
 
 %% BƯỚC 5 (Lạc): Dạng Schur
 
