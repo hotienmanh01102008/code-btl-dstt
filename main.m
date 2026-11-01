@@ -127,6 +127,7 @@ IN ma_trận H
                                       Code
                                       
 H = A; % Tạo bản sao H để giữ nguyên ma trận A gốc
+W = eye(n); % Tích lũy các phép biến đổi Householder 
 for k = 1:(n - 2)
     m = n - k;
     x = H(k+1:n, k);
@@ -154,6 +155,9 @@ for k = 1:(n - 2)
     
     % Biến đổi tương tự: H = P_k * H * P_k'
     H = P_k * H * P_k';
+    % Tích lũy W 
+    W = W * P_k; 
+
 end
 fprintf('----------------------\n');
 fprintf('\nMa trận Hessenberg của A là:\n');
@@ -229,6 +233,7 @@ BẮT ĐẦU
                                   Code 
 
 % 4. Thuật toán QR lặp (Viết trực tiếp phép quay Givens bên trong)
+Q_tilde = eye(n); % Tích lũy ma trận Givens: Q_tilde = Q_0 * Q_1 * ... * Q_{k-1} 
 min = 1e-6;
 limit = 1000;
 H_k = H;
@@ -264,6 +269,9 @@ for i = 1:limit
     
     % Cập nhật H_k = R_k * Q_k cho bước lặp tiếp theo
     H_k = R_k * Q_k;
+    % Tích lũy ma trận Givens Q_tilde 
+    Q_tilde = Q_tilde * Q_k; 
+
     
     % Kiểm tra điều kiện dừng
     subdiag = diag(H_k, -1);
@@ -289,7 +297,38 @@ disp(H_k);
 %% BƯỚC 5 (Lạc): Dạng Schur
 
 
-%% BƯỚC 6 (Lạc): Trị riêng
+
+                                              Pseudo code
+GÁN T = H_k 
+GÁN Q = W * Q_tilde
+
+ IN_RA "Ma trận dạng Schur T ="
+ XUẤT T 
+
+IN_RA "Ma trận trực giao tổng thể Q ="
+ XUẤT Q 
+
+GÁN sai_số = chuẩn_Euclid(A - Q * T * chuyển_vị_liên_hợp(Q)) 
+IN_RA "Sai số kiểm tra ||A - Q*T*Q*|| =", sai_số 
+
+                                              Code
+
+T = H_k;                 % Ma trận dạng Schur T
+Q = W * Q_tilde;         % Ma trận trực giao tổng thể Q = W * Q_tilde
+
+fprintf('----------------------\n');
+
+fprintf('\nMa trận dạng Schur T =\n');
+disp(T);
+
+fprintf('\nMa trận trực giao tổng thể Q =\n');
+disp(Q);
+
+% Kiểm tra lại phân rã A = Q * T * Q' (Sai số ra 0 thì đúng )
+err = norm(A - Q * T * Q');
+fprintf('Sai số kiểm tra ||A - Q*T*Q''|| = %.2e\n', err);
 
 
-%% BƯỚC 7 (Lạc): Vectơ riêng
+%% BƯỚC 6 + 7 (Lạc): Trị riêng + Vector riêng
+
+
