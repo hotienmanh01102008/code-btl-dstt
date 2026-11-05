@@ -173,7 +173,7 @@ disp(H);
                                     Pseudo code
 BẮT ĐẦU
     % 1. Khởi tạo các tham số
-    Gán min = 1e-6
+    Gán tol = 1e-6
     Gán limit = 1000
     Gán H_k = H
     Gán status = FALSE
@@ -214,7 +214,7 @@ BẮT ĐẦU
         % --- Kiểm tra điều kiện hội tụ ---
         Lấy đường chéo phụ bên dưới: subdiag = diag(H_k, -1)
         
-        NẾU max(|subdiag|) < min THÌ:
+        NẾU max(|subdiag|) < tol THÌ:
             status = TRUE
             Thoát vòng lặp i (BREAK)
         KẾT THÚC NẾU
@@ -234,7 +234,7 @@ BẮT ĐẦU
 
 % 4. Thuật toán QR lặp (Viết trực tiếp phép quay Givens bên trong)
 Q_tilde = eye(n); % Tích lũy ma trận Givens: Q_tilde = Q_0 * Q_1 * ... * Q_{k-1} 
-min = 1e-6;
+tol = 1e-6;
 limit = 1000;
 H_k = H;
 status = false;
@@ -275,7 +275,7 @@ for i = 1:limit
     
     % Kiểm tra điều kiện dừng
     subdiag = diag(H_k, -1);
-    if max(abs(subdiag)) < min
+    if max(abs(subdiag)) < tol
         status = true;
         break;
     end
