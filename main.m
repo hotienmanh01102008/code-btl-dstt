@@ -329,6 +329,135 @@ err = norm(A - Q * T * Q');
 fprintf('Sai số kiểm tra ||A - Q*T*Q''|| = %.2e\n', err);
 
 
-%% BƯỚC 6 + 7 (Lạc): Trị riêng + Vector riêng
+%% BƯỚC 6 (Lạc): Trị riêng
+
+
+
+                              Pseudo Code
+
+TẠO mảng trị_riêng kích thước n
+
+VÒNG_LẶP i TỪ 1 ĐẾN n:
+    GÁN trị_riêng[i] = T[i, i]
+KẾT_THÚC_VÒNG_LẶP
+
+IN_RA "Các trị riêng lambda_i = T_ii là:"
+XUẤT trị_riêng
+
+
+                            Code
+
+
+eigenvalues = diag(T);
+fprintf('----------------------\n'); 
+fprintf('\nBước 6: Các trị riêng lambda_i = T_ii:\n'); 
+for i = 1:n 
+     fprintf(' lambda_%d = %.6f\n', i, eigenvalues(i)); 
+end 
+
+
+%% BƯỚC 7 (Lạc): Vector riêng
+
+
+                            Pseudo Code
+
+TẠO ma trận Y kích thước (n x n)  // Lưu các vectơ riêng y của T
+TẠO ma trận V kích thước (n x n)  // Lưu các vectơ riêng v của A
+
+VÒNG_LẶP i TỪ 1 ĐẾN n:
+    GÁN lambda = trị_riêng[i]
+    TẠO vectơ y kích thước (n x 1) với các giá trị ban đầu bằng 0
+    
+    % Chọn phần tử cơ sở y[i] = 1
+    GÁN y[i] = 1
+    
+    % Giải thế ngược từ (i - 1) giảm về 1 cho hệ (T - lambda*I)*y = 0
+    VÒNG_LẶP k TỪ (i - 1) GIẢM VỀ 1:
+        GÁN tổng = 0
+        VÒNG_LẶP j TỪ (k + 1) ĐẾN i:
+            GÁN tổng = tổng + T[k, j] * y[j]
+        KẾT_THÚC_VÒNG_LẶP
+        
+        GÁN mẫu_số = T[k, k] - lambda
+        NẾU |mẫu_số| < 1e-12 THÌ
+            GÁN mẫu_số = 1e-12  // Tránh lỗi chia cho 0 nếu có trị riêng bội
+        KẾT_THÚC_NẾU
+        
+        GÁN y[k] = -tổng / mẫu_số
+    KẾT_THÚC_VÒNG_LẶP
+    
+    % Chuẩn hóa vectơ y
+    GÁN y = y / chuẩn_Euclid(y)
+    GÁN Y[:, i] = y
+    
+    % Biến đổi về vectơ riêng của A: v = Q * y
+    GÁN v = Q * y
+    GÁN v = v / chuẩn_Euclid(v)
+    GÁN V[:, i] = v
+KẾT_THÚC_VÒNG_LẶP
+
+IN_RA "Ma trận các vectơ riêng V (mỗi cột là một vectơ riêng v_i) ="
+XUẤT V
+
+ KIỂM TRA SAI SỐ (||A*v - lambda*v||)
+
+VÒNG_LẶP i TỪ 1 ĐẾN n:
+    GÁN sai_số_v = chuẩn_Euclid(A * V[:, i] - trị_riêng[i] * V[:, i])
+    IN_RA "Sai số ||A*v_" + i + " - lambda_" + i + "*v_" + i + "|| =", sai_số_v
+KẾT_THÚC_VÒNG_LẶP
+
+
+                                Code
+
+% 1. Giải hệ phương trình T*y = lambda*y <=> (T - lambda*I)*y = 0 để tìm y
+% 2. Lấy v = Q * y để thu được vectơ riêng của ma trận A gốc
+
+Y = zeros(n, n); % Lưu các vectơ riêng y của T (mỗi cột là 1 vectơ)
+V = zeros(n, n); % Lưu các vectơ riêng v của A (mỗi cột là 1 vectơ)
+
+for i = 1:n
+    lambda = eigenvalues(i);
+    y = zeros(n, 1);
+    
+    % Vì T là ma trận tam giác trên, ta chọn phần tử cơ sở y(i) = 1 và y(i+1:n) = 0
+    y(i) = 1;
+    
+    % Thế ngược từ dưới lên để tìm y(1:i-1)
+    for k = (i - 1):-1:1
+        sum_val = T(k, k+1:i) * y(k+1:i);
+        denom = T(k, k) - lambda;
+        
+        % Tránh lỗi chia cho 0 nếu xuất hiện trị riêng bội
+        if abs(denom) < 1e-12
+            denom = 1e-12;
+        end
+        
+        y(k) = -sum_val / denom;
+    end
+    
+    % Chuẩn hóa vectơ y
+    y = y / norm(y);
+    Y(:, i) = y;
+    
+    % Lấy v = Q * y
+    v = Q * y;
+    v = v / norm(v); % Chuẩn hóa vectơ riêng v
+    V(:, i) = v;
+end
+
+fprintf('----------------------\n');
+fprintf('\nBước 7: Các vectơ riêng v_i tương ứng của ma trận A:\n');
+for i = 1:n
+    fprintf('Vectơ riêng v_%d (ứng với lambda_%d = %.6f):\n', i, i, eigenvalues(i));
+    disp(V(:, i));
+end
+
+% Kiểm tra lại tính đúng đắn theo phương trình A*v = lambda*v
+fprintf('----------------------\n');
+fprintf('Kiểm tra sai số ||A*v - lambda*v||:\n');
+for i = 1:n
+    err_ev = norm(A * V(:, i) - eigenvalues(i) * V(:, i));
+    fprintf('  ||A*v_%d - lambda_%d*v_%d|| = %.2e\n', i, i, i, err_ev);
+end
 
 
