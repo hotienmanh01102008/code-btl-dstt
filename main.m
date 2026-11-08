@@ -350,7 +350,7 @@ XUẤT trị_riêng
 
 eigenvalues = diag(T);
 fprintf('----------------------\n'); 
-fprintf('\nBước 6: Các trị riêng lambda_i = T_ii:\n'); 
+fprintf('\nCác trị riêng lambda_i = T_ii:\n'); 
 for i = 1:n 
      fprintf(' lambda_%d = %.6f\n', i, eigenvalues(i)); 
 end 
@@ -446,7 +446,7 @@ for i = 1:n
 end
 
 fprintf('----------------------\n');
-fprintf('\nBước 7: Các vectơ riêng v_i tương ứng của ma trận A:\n');
+fprintf('\nCác vectơ riêng v_i tương ứng của ma trận A:\n');
 for i = 1:n
     fprintf('Vectơ riêng v_%d (ứng với lambda_%d = %.6f):\n', i, i, eigenvalues(i));
     disp(V(:, i));
